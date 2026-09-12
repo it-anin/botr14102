@@ -20,7 +20,7 @@ app:
   #
   # ต้องเป็น false จนกว่าจะมีตัวอัปโหลดของ R14.102 -- upload-products.mjs เขียนไว้
   # สำหรับ R05.106 (ตาราง products) ส่วน bot/upload.py จะส่งไฟล์ CSV ที่ flow เพิ่งสร้าง
-  # (R14.102.CSV) ให้มัน ซึ่งหัวคอลัมน์คนละชุดกัน
+  # (ADJ_R14.102.CSV) ให้มัน ซึ่งหัวคอลัมน์คนละชุดกัน
   default_then_upload: false
 
 paths:

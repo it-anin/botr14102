@@ -285,7 +285,7 @@ const text = readFileSync(csvPath, 'utf-8').replace(/^﻿/, '');
 
 ```yaml
 - action: assert_file
-  path: "C:\\...\\R14.102.part.CSV"
+  path: "C:\\...\\ADJ_R14.102.part.CSV"
   min_size: 1000000
   max_age: 300      # ต้องเพิ่งถูกเขียนภายใน 300 วินาที
   timeout: 180
@@ -544,16 +544,16 @@ Scheduled Task จึงต้องเป็น *"Run only when user is logged 
 
 ```yaml
 - action: set_text        # ให้โปรแกรมเขียนลงชื่อชั่วคราว
-  value: "...\\R14.102.part.CSV"
+  value: "...\\ADJ_R14.102.part.CSV"
 
 - action: assert_file     # ตรวจว่าเขียนเสร็จจริงและเป็นของรอบนี้
-  path: "...\\R14.102.part.CSV"
+  path: "...\\ADJ_R14.102.part.CSV"
   min_size: 1000000
   max_age: 300
 
 - action: move_file       # ผ่านแล้วค่อยเผยแพร่ (atomic เมื่ออยู่ไดรฟ์เดียวกัน)
-  from: "...\\R14.102.part.CSV"
-  to: "...\\R14.102.CSV"
+  from: "...\\ADJ_R14.102.part.CSV"
+  to: "...\\ADJ_R14.102.CSV"
 ```
 
 ทดสอบด้วยการฆ่า ProMaxx กลาง flow แล้ว: ไฟล์ชื่อจริงของรอบก่อน **ไม่ถูกแตะเลย**
@@ -571,7 +571,7 @@ Scheduled Task จึงต้องเป็น *"Run only when user is logged 
   "duration_seconds": 74.4,
   "flows": ["flows/r14_102_export.yaml"],
   "outputs": [
-    { "path": "...\\R14.102.CSV", "size": 46377496, "modified": "2026-09-12T08:23:09" }
+    { "path": "...\\ADJ_R14.102.CSV", "size": 46377496, "modified": "2026-09-12T08:23:09" }
   ],
   "error": null
 }

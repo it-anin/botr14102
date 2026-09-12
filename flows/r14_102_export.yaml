@@ -2,7 +2,7 @@
 #
 # ยังไม่มีตัวอัปโหลดของรายงานนี้ -- ห้ามรันด้วย --then-upload เพราะ upload-products.mjs
 # เขียนไว้สำหรับ R05.106 (ตาราง products) และ bot/upload.py จะส่งไฟล์ CSV ที่ flow นี้
-# เพิ่งสร้าง (R14.102.CSV) ให้มัน
+# เพิ่งสร้าง (ADJ_R14.102.CSV) ให้มัน
 #
 # ปุ่ม "ส่งออก" เปิด Save As dialog มาตรฐานของวินโดวส์ (#32770 title='Select File')
 # ซึ่งเป็น control จริงทั้งหมด สั่งงานด้วย locator ได้ตรง ๆ
@@ -19,7 +19,7 @@
 # ในช่องชื่อไฟล์ให้เอง
 #
 # อยากเปลี่ยนเป็นไฟล์ที่ไม่ทับกันให้ใส่วันที่ในชื่อ เช่น
-#     value: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102_${BOT_DATE}.CSV"
+#     value: "${USERPROFILE}\\Desktop\\run-upload-stock\\ADJ_R14.102_${BOT_DATE}.CSV"
 # ตัวแปรที่ใช้ได้: ${BOT_DATE} ${BOT_TIME} ${BOT_DATETIME}
 #
 # CSV ที่ได้เป็น UTF-8 พร้อม BOM (ทดสอบแล้ว ไม่ใช่ ANSI ไทย ภาษาไทยไม่เพี้ยน)
@@ -89,7 +89,7 @@ steps:
     name: พิมพ์ path ปลายทางชั่วคราว
     window: save
     control: { class_name: "Edit", control_id: 1152 }
-    value: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102.part.CSV"
+    value: "${USERPROFILE}\\Desktop\\run-upload-stock\\ADJ_R14.102.part.CSV"
 
   - action: click
     name: กดปุ่ม Save
@@ -146,7 +146,7 @@ steps:
   # max_age กันไฟล์ .part ค้างจากรอบก่อนถูกนับว่าผ่าน
   - action: assert_file
     name: ตรวจว่าไฟล์ชั่วคราวถูกเขียนจริง
-    path: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102.part.CSV"
+    path: "${USERPROFILE}\\Desktop\\run-upload-stock\\ADJ_R14.102.part.CSV"
     # ของจริงราว 46 MB - ตั้งไว้ 1 MB พอให้จับไฟล์เปล่า/ไฟล์ที่เขียนไม่จบ
     # โดยไม่ล้มผิด ๆ ถ้าวันหลังแคบช่วงปีลงจนข้อมูลน้อยกว่านี้มาก
     min_size: 1000000
@@ -156,8 +156,8 @@ steps:
   # ผ่านการตรวจแล้วค่อยเผยแพร่เป็นชื่อจริง - อยู่ไดรฟ์เดียวกันจึงเป็น atomic
   - action: move_file
     name: เปลี่ยนชื่อเป็นไฟล์จริง
-    from: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102.part.CSV"
-    to: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102.CSV"
+    from: "${USERPROFILE}\\Desktop\\run-upload-stock\\ADJ_R14.102.part.CSV"
+    to: "${USERPROFILE}\\Desktop\\run-upload-stock\\ADJ_R14.102.CSV"
 
   - action: screenshot
     name: 01_after_export
