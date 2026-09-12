@@ -2,17 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+เอกสารอื่นในโปรเจกต์: `README.md` (คู่มือใช้งานเต็ม) ·
+`HOWTO_NEW_REPORT.md` (วิธีดัดแปลงไปทำบอทของรายงานอื่น — ลำดับขั้นตอน วิธีวัดพิกัดคลิก
+ตาราง locator ของ ProMaxx ที่ยืนยันแล้ว **อ่านไฟล์นี้ก่อนถ้าจะทำสาย flow ใหม่**)
+
 ## ภาพรวม
 
 บอทกดปุ่มในโปรแกรม **ProMaxx Report** (`promaxxreport.exe` — PowerBuilder 12.5.2) เพื่อ
-export รายงาน R05.106 (บาร์โค้ดสินค้า) เป็น CSV แล้วอัปโหลดเข้า Supabase อัตโนมัติทุกวัน
+export รายงาน **R14.102 รายงานสินค้าคงเหลือ เลือกแสดงตามวันรับเข้า (เรียงตามวันหมดอายุ)**
+เป็นไฟล์ `ADJ_R14.102.CSV` ลงโฟลเดอร์ `%USERPROFILE%\Desktop\run-upload-stock\`
+
+**ยังไม่มีขั้นอัปโหลด** — โปรเจกต์นี้ก๊อปมาจากบอท R05.106 (บาร์โค้ดสินค้า) ซึ่งมีส่วน
+อัปโหลดเข้า Supabase ติดมาด้วย ส่วนนั้นยังเป็นของ R05.106 ล้วน ๆ ใช้กับ R14.102 ไม่ได้
+(ดูหัวข้อสถาปัตยกรรม) งานปัจจุบันของบอทตัวนี้จบที่ได้ไฟล์ CSV
 
 สองภาษาแบ่งหน้าที่ชัดเจน — **อย่ารวมกัน**
 
-| ส่วน | ภาษา | ไฟล์ |
-|---|---|---|
-| ขับ GUI ของ ProMaxx | Python 3.11 | `run.py`, `bot/` |
-| อัปโหลดเข้า Supabase | Node.js (ESM) | `upload-products.mjs` |
+| ส่วน | ภาษา | ไฟล์ | สถานะ |
+|---|---|---|---|
+| ขับ GUI ของ ProMaxx | Python 3.11 | `run.py`, `bot/` | ใช้งานอยู่ |
+| อัปโหลดเข้า Supabase | Node.js (ESM) | `upload-products.mjs` | ของ R05.106 ไม่ได้ต่อกับสายนี้ |
 
 `bot/upload.py` เป็นแค่ตัวเรียก `node upload-products.mjs` แล้วส่ง exit code กลับ —
 ไม่มีตรรกะอัปโหลดใน Python เลย เหตุผลอยู่ใน docstring ของไฟล์นั้น (สรุป: `.mjs`
@@ -37,10 +46,10 @@ npm test                                          # 11 ตัว
 node --test upload-products.test.mjs              # เหมือนกัน
 node --test --test-name-pattern "isStaleFile" upload-products.test.mjs   # ตัวเดียว
 
-# ทดสอบ uploader โดยไม่แตะ Supabase
+# ทดสอบ uploader โดยไม่แตะ Supabase (ของ R05.106 เท่านั้น)
 node upload-products.mjs --dry-run --file "path\to\R05.106.CSV"
 
-# build เป็น .exe (~34 MB, onedir)
+# build เป็น .exe (โฟลเดอร์ dist\promaxx-bot ~45 MB, onedir)
 .\tools\build_exe.ps1
 
 # ตั้งรันอัตโนมัติ
@@ -191,6 +200,13 @@ SQL Editor ครั้งเดียวก่อนใช้งาน)
 `outputs` ใน `last_run.json` เก็บเฉพาะไฟล์ที่**เผยแพร่จริง** — ไฟล์ `.part` ที่ถูก
 เปลี่ยนชื่อไปแล้วถูกถอดออก สคริปต์ปลายทางควรเช็ค `status == "ok"` ก่อนใช้
 
+ตอนรันด้วย `.exe` ไฟล์เหล่านี้อยู่ใต้ `dist\promaxx-bot\` ไม่ใช่รากโปรเจกต์ (ตาม `ROOT`)
+
+**ล็อกกันรันซ้ำใช้ชื่อคงที่ `BOTR05106_promaxx_bot`** (`run.py` ใน `cmd_run`) ซึ่งเป็นชื่อ
+ที่ติดมาจากโปรเจกต์เดิม บอท R05.106 กับ R14.102 บนเครื่องเดียวกันจึงรันพร้อมกันไม่ได้
+ตัวที่มาทีหลังจบด้วย exit code `already_running` ทันที — ตั้งใจให้กันไว้แบบนี้เพราะ
+ทั้งคู่แย่งคุม ProMaxx หน้าต่างเดียวกัน ถ้าจะให้แยกกันรันต้องเปลี่ยนชื่อล็อกให้ไม่ซ้ำ
+
 ## กับดักเฉพาะเครื่องนี้
 
 **ไฟล์ `.ps1` ที่มีภาษาไทยต้องมี UTF-8 BOM** — PowerShell 5.1 อ่านไฟล์ไม่มี BOM ด้วย
@@ -213,6 +229,17 @@ $c = [System.IO.File]::ReadAllText($p, [System.Text.Encoding]::UTF8)
 WinError 32 — `build_exe.ps1` จึงลบไฟล์ข้างในแทนการลบตัวโฟลเดอร์
 
 **อย่ารัน `.exe` ที่มี `pause` ค้างไว้ระหว่างทดสอบ** จะล็อก `dist/` จน build ไม่ผ่าน
+
+**ห้ามใส่ `2>&1` เวลาสั่ง PyInstaller หรือ .exe จาก PowerShell 5.1** — มันจะห่อบรรทัด
+stderr เป็น ErrorRecord ทำให้ `$?` เป็น false ทั้งที่ exit code เป็น 0 แล้ว
+`build_exe.ps1` (ตั้ง `$ErrorActionPreference = "Stop"`) จะหยุดกลางคัน
+
+**push ขึ้น GitHub ต้องใช้บัญชี `it-anin`** — Credential Manager ของเครื่องนี้คืนบัญชี
+`xanxisevolution-bot` ซึ่งไม่มีสิทธิ์เขียน repo แล้วได้ 403 แก้แล้วโดยตั้ง credential
+helper เฉพาะ repo นี้ให้ใช้บัญชีจาก `gh` (`git config --local` ไม่ได้แตะค่าส่วนกลาง)
+
+remote: `origin` = `it-anin/botr14102` (ที่ใช้จริง) · `botr05106` = repo เดิมที่โปรเจกต์นี้
+ก๊อปมา เก็บไว้เผื่ออ้างอิง — ระวังอย่า push ไปผิดตัว
 
 ## สิ่งที่เปลี่ยนได้โดยไม่ต้อง build .exe ใหม่
 
