@@ -23,8 +23,7 @@ export รายงาน R05.106 (บาร์โค้ดสินค้า) �
 
 ```powershell
 # รัน flow (ทุกคำสั่งใช้ .exe แทน "python run.py" ได้ ถ้า build แล้ว)
-python run.py run flows/r05_106_export.yaml
-python run.py run flows/r05_106_export.yaml --then-upload      # export แล้วอัปเข้า Supabase
+python run.py run flows/r14_102_export.yaml                    # สายเต็ม: ล็อกอิน -> ส่งออก CSV
 python run.py run flows/login.yaml --dry-run                   # หา control แต่ไม่กดจริง
 
 # สำรวจหน้าจอ (ใช้ตอนสร้าง flow ใหม่)
@@ -45,7 +44,7 @@ node upload-products.mjs --dry-run --file "path\to\R05.106.CSV"
 .\tools\build_exe.ps1
 
 # ตั้งรันอัตโนมัติ
-.\tools\register_task.ps1 -Time 08:30 -Flows "flows/r05_106_export.yaml" -WithUpload
+.\tools\register_task.ps1 -Time 08:30 -Flows "flows/r14_102_export.yaml"
 ```
 
 ## สถาปัตยกรรม
@@ -61,17 +60,31 @@ run.py (CLI)
             ├─ bot/datawindow.py  จัดการ DataWindow ของ PowerBuilder
             └─ bot/watch.py       เทียบภาพก่อน-หลังว่าการกดมีผลจริง
   └─ bot/upload.py     (เมื่อใส่ --then-upload) เรียก node upload-products.mjs
+                       ** ยังเป็นของ R05.106 เท่านั้น ดูหัวข้อถัดไป **
 ```
 
-**flow ซ้อนกันเป็นชั้น** ผ่าน action `run_flow` — ตัวนอกสุดคือ `r05_106_export.yaml`
+**flow ซ้อนกันเป็นชั้น** ผ่าน action `run_flow` — ตัวนอกสุดคือ `r14_102_export.yaml`
 ซึ่งเรียกลึกลงไปถึง `login.yaml` แต่ละชั้นเพิ่มทีละขั้นตอน แก้ชั้นล่างแล้วกระทบทุกชั้นบน
+ซ้อนได้ไม่เกิน `MAX_FLOW_DEPTH = 12` ใน `bot/runner.py` (เดิม 5 ไม่พอสายนี้)
 
 ```
-login → r05_1 → r05_106 → r05_106_generate → r05_106_confirm → r05_106_export
+login → r14_1 → r14_102 → r14_102_generate → r14_102_warehouse
+      → r14_102_warehouse_select → r14_102_year → r14_102_confirm → r14_102_export
 ```
+
+**สายนี้ย้ายมาจาก R05.106 ทั้งเส้น** ไฟล์ `r05_*.yaml` ถูกเปลี่ยนชื่อหมดแล้ว ไม่เหลือในโปรเจกต์
+เงื่อนไขที่ตั้งให้รายงาน: คลัง อนิน สาขาแยกชากค้อ (Warehouse, Front Store) / เก้ากิโล /
+อนิน สาขาสวนเสือศรีราชา · ประจำปี-ช่วงปี 2023-2026 · สินค้าทั้งหมด
+ได้ไฟล์ `R14.102.CSV` ราว 46 MB (130,408 แถว 27 คอลัมน์) ใช้เวลาทั้งสายราว 75 วินาที
+
+**ส่วนอัปโหลดยังเป็นของ R05.106** `upload-products.mjs`, `bot/upload.py`,
+`tools/run_and_upload.ps1` ยังยึดหัวคอลัมน์ของ R05.106 (ตาราง products)
+`app.default_then_upload` จึงตั้งเป็น false และ**ห้ามรันสายนี้ด้วย `--then-upload`**
+จนกว่าจะเขียนตัวอัปโหลดของ R14.102 (ถ้าเผลอสั่ง uploader จะหยุดเองเพราะหาคอลัมน์
+CF_BARCODE / CF_FMLPRICE / CF_BASEMULTIPLE ไม่เจอ ตาราง products ไม่ถูกแตะ)
 
 flow ระหว่างทางตั้งใจ**ไม่ปิดโปรแกรม** เพื่อให้ `inspect` ส่องหน้าจอต่อได้
-มีแต่ `r05_106_export.yaml` ที่มี `stop_app` ปิดท้าย
+มีแต่ `r14_102_export.yaml` ที่มี `stop_app` ปิดท้าย
 
 ### เพิ่ม action ใหม่
 
@@ -127,14 +140,20 @@ PowerBuilder เงียบสนิทเมื่อกดพลาด ทุ
 2. `wait_window` — เมื่อการกดทำให้มีหน้าต่างใหม่โผล่
 3. `expect_change` — เทียบภาพ ใช้เมื่อไม่มีอะไรให้ยึดนอกจาก pixel
 
-รายละเอียดกับดักของ `expect_change` (แถบไฮไลต์แถว, caret กะพริบ, ภาพยังไม่นิ่ง)
-อยู่ใน README หัวข้อ "กับดักที่เจอมาแล้ว 3 อย่าง"
+รายละเอียดกับดักของ `expect_change` (แถบไฮไลต์แถว, caret กะพริบ, ภาพยังไม่นิ่ง,
+พื้นที่รายงานถูกล้างเป็นสีขาวก่อนดึงข้อมูล) อยู่ใน README หัวข้อ "กับดักที่เจอมาแล้ว 4 อย่าง"
+
+**รายงานใหญ่ห้ามยืนยันด้วยการเทียบภาพพื้นที่รายงาน** — ผ่านตั้งแต่วินาทีแรกที่หน้าถูกล้าง
+ทั้งที่รายงานยังไม่ออก ให้รอ `Edit` id 1004 (แถบสรุปเงื่อนไขใต้รายงาน) โผล่ด้วย
+`wait_control` แล้ว `assert_text` ข้อความเงื่อนไข (ดู `flows/r14_102_confirm.yaml`)
+ระหว่างสร้างรายงาน โปรแกรมหยุดตอบ message ทั้งตัว — `WM_GETTEXT` คืนค่าว่าง
+แต่ `wait_control` ที่หาด้วยคลาสกับ id อย่างเดียวยังทำงานได้
 
 ## ความปลอดภัยของข้อมูลปลายทาง
 
 ### เผยแพร่ไฟล์แบบ temp แล้วเปลี่ยนชื่อ
 
-`r05_106_export.yaml` เขียนลง `.part.CSV` → `assert_file` ตรวจ → `move_file` เปลี่ยนชื่อ
+`r14_102_export.yaml` เขียนลง `.part.CSV` → `assert_file` ตรวจ → `move_file` เปลี่ยนชื่อ
 ถ้า flow ล้มกลางทาง ไฟล์ของรอบก่อนยังอยู่ครบ และปลายทางไม่มีวันหยิบไฟล์ที่เขียนไม่เสร็จ
 
 `assert_file` มี `max_age` กันไฟล์เก่าจากรอบก่อนถูกนับว่าผ่าน

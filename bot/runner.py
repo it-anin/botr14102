@@ -20,7 +20,10 @@ from .watchdog import Watchdog
 log = get_logger()
 
 FLOW_KEYS = {"name", "description", "on_error", "timeout", "steps", "_path"}
-MAX_FLOW_DEPTH = 5
+# กันไฟล์ flow เรียกกันเองวนเป็นวงกลม - สาย R14.102 ซ้อนกันจริง 8 ชั้น
+# (export → confirm → year → warehouse_select → warehouse → generate → r14_102 → r14_1 → login)
+# จึงเผื่อไว้ 12 ทุก flow เรียก run_flow เป็นขั้นแรก ถ้าวนจะชนเพดานก่อนกดอะไรจริง
+MAX_FLOW_DEPTH = 12
 
 
 class FlowError(Exception):

@@ -1,4 +1,8 @@
-# ส่งออกรายงาน R05.106 เป็นไฟล์ CSV เพื่ออัปโหลดขึ้น Supabase
+# ส่งออกรายงาน R14.102 เป็นไฟล์ CSV ลงโฟลเดอร์เดียวกับ R05.106 (run-upload-stock)
+#
+# ยังไม่มีตัวอัปโหลดของรายงานนี้ -- ห้ามรันด้วย --then-upload เพราะ upload-products.mjs
+# เขียนไว้สำหรับ R05.106 (ตาราง products) และ bot/upload.py จะส่งไฟล์ CSV ที่ flow นี้
+# เพิ่งสร้าง (R14.102.CSV) ให้มัน
 #
 # ปุ่ม "ส่งออก" เปิด Save As dialog มาตรฐานของวินโดวส์ (#32770 title='Select File')
 # ซึ่งเป็น control จริงทั้งหมด สั่งงานด้วย locator ได้ตรง ๆ
@@ -15,24 +19,33 @@
 # ในช่องชื่อไฟล์ให้เอง
 #
 # อยากเปลี่ยนเป็นไฟล์ที่ไม่ทับกันให้ใส่วันที่ในชื่อ เช่น
-#     value: "${USERPROFILE}\\Desktop\\run-upload-stock\\R05.106_${BOT_DATE}.CSV"
+#     value: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102_${BOT_DATE}.CSV"
 # ตัวแปรที่ใช้ได้: ${BOT_DATE} ${BOT_TIME} ${BOT_DATETIME}
 #
 # CSV ที่ได้เป็น UTF-8 พร้อม BOM (ทดสอบแล้ว ไม่ใช่ ANSI ไทย ภาษาไทยไม่เพี้ยน)
-# ข้อมูลเป็นข้อมูลดิบของ DataWindow ชื่อคอลัมน์เป็นชื่อฐานข้อมูลตรง ๆ
-# (CF_BARCODE, CF_ITEMID, CF_ITEMNAME, ...) 27 คอลัมน์ ไม่มีแถวหัวกระดาษปน
+# ข้อมูลเป็นข้อมูลดิบของ DataWindow ชื่อคอลัมน์เป็นชื่อฐานข้อมูลตรง ๆ ไม่มีแถวหัวกระดาษปน
+#
+# วัดจากของจริง (คลัง 3 กลุ่ม ปี 2023-2026): 46.4 MB · 130,408 แถว · 27 คอลัมน์
+#     TRANDATE, EXPIREDATE, CF_EXPIREDATE_TEXT, CF_TRANDATE, CF_SYSBRANCHID, CF_BNAME,
+#     CF_SYSWAREHOUSEID, CF_WAREHOUSE_NAME, CF_SYSITEMID, CF_ITEMID, CF_ITEMNAME,
+#     CF_LOTNO, CF_PRICE, CF_UNITNAME, CF_QUANTITY, CF_ITEMPRICELEVEL_PRICE,
+#     CF_SYSITEMGROUPL1ID..L5ID, CF_ITEMGROUPL1_GROUPNAME..L5_GROUPNAME, CF_COMPANY
+#
+# คนละชุดกับ R05.106 -- ไม่มี CF_BARCODE, CF_FMLPRICE, CF_BASEMULTIPLE ซึ่ง
+# upload-products.mjs บังคับ ถ้าเผลอสั่งอัปโหลดไฟล์นี้ มันจะหยุดพร้อมบอกว่าหาคอลัมน์ไม่เจอ
+# (ตรวจหัวคอลัมน์ก่อนเขียน) ตาราง products จึงไม่ถูกทับด้วยข้อมูลผิดชุด
 #
 # ฝั่ง Node ที่อ่านไฟล์นี้: readFileSync(path, 'utf-8') ไม่ตัด BOM ให้
 # ถ้าอ่านด้วยชื่อคอลัมน์ต้อง .replace(/^\uFEFF/, '') ก่อน
 
-name: r05_106_export
-description: ส่งออกรายงาน R05.106 เป็น CSV ลงโฟลเดอร์ run-upload-stock
+name: r14_102_export
+description: ส่งออกรายงาน R14.102 เป็น CSV ลงโฟลเดอร์ run-upload-stock
 on_error: abort
 
 steps:
   - action: run_flow
-    name: ออกรายงาน R05.106 ก่อน
-    path: flows/r05_106_confirm.yaml
+    name: ออกรายงาน R14.102 ก่อน
+    path: flows/r14_102_confirm.yaml
 
   - action: wait_window
     name: จับหน้าจอหลักไว้อ้างอิง
@@ -76,7 +89,7 @@ steps:
     name: พิมพ์ path ปลายทางชั่วคราว
     window: save
     control: { class_name: "Edit", control_id: 1152 }
-    value: "${USERPROFILE}\\Desktop\\run-upload-stock\\R05.106.part.CSV"
+    value: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102.part.CSV"
 
   - action: click
     name: กดปุ่ม Save
@@ -133,16 +146,18 @@ steps:
   # max_age กันไฟล์ .part ค้างจากรอบก่อนถูกนับว่าผ่าน
   - action: assert_file
     name: ตรวจว่าไฟล์ชั่วคราวถูกเขียนจริง
-    path: "${USERPROFILE}\\Desktop\\run-upload-stock\\R05.106.part.CSV"
-    min_size: 100000
+    path: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102.part.CSV"
+    # ของจริงราว 46 MB - ตั้งไว้ 1 MB พอให้จับไฟล์เปล่า/ไฟล์ที่เขียนไม่จบ
+    # โดยไม่ล้มผิด ๆ ถ้าวันหลังแคบช่วงปีลงจนข้อมูลน้อยกว่านี้มาก
+    min_size: 1000000
     max_age: 300
     timeout: 180
 
   # ผ่านการตรวจแล้วค่อยเผยแพร่เป็นชื่อจริง - อยู่ไดรฟ์เดียวกันจึงเป็น atomic
   - action: move_file
     name: เปลี่ยนชื่อเป็นไฟล์จริง
-    from: "${USERPROFILE}\\Desktop\\run-upload-stock\\R05.106.part.CSV"
-    to: "${USERPROFILE}\\Desktop\\run-upload-stock\\R05.106.CSV"
+    from: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102.part.CSV"
+    to: "${USERPROFILE}\\Desktop\\run-upload-stock\\R14.102.CSV"
 
   - action: screenshot
     name: 01_after_export
@@ -152,7 +167,8 @@ steps:
   # เพราะสองอันนั้นต้องการให้โปรแกรมยังเปิดอยู่
   #
   # ใส่เฉพาะ flow นี้ซึ่งเป็นตัวนอกสุดที่ใช้รันจริง ส่วน flow ระหว่างทาง
-  # (login, r05_1, r05_106, r05_106_generate, r05_106_confirm) ตั้งใจให้เปิดค้างไว้
+  # (login, r14_1, r14_102, r14_102_generate, r14_102_warehouse,
+  # r14_102_warehouse_select, r14_102_year, r14_102_confirm) ตั้งใจให้เปิดค้างไว้
   # จะได้ใช้ run.py inspect ส่องหน้าจอต่อได้
   - action: stop_app
     name: ปิดโปรแกรม ProMaxx

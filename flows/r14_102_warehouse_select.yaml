@@ -1,0 +1,118 @@
+# ติ๊กเลือกคลัง 3 กลุ่มในหน้าต่าง "เลือกคลังสินค้าที่ต้องการ" แล้วกดตกลง
+#
+# ต่อยอดจาก flows/r14_102_warehouse.yaml (กดดินสอเปิดหน้าเลือกคลัง) ไม่ต้องเขียนซ้ำ
+#
+# รายการคลังเป็น DataWindow pbdw125 id=1003 วาดเอง ต้องคลิกพิกัด
+# แถวสูง 24px เท่ากันหมด  y ของกล่องติ๊ก = 36 + 24 * ลำดับแถว (ลำดับเริ่มนับ 0)
+#     x = 7    กล่องติ๊กของ "กลุ่ม" (สาขา)
+#     x = 40   กล่องติ๊กของคลังลูก
+#
+#      0 อนิน สาขาแยกชากค้อ      y=36    <- ติ๊ก
+#      1   Warehouse            y=60
+#      2   Front Store          y=84
+#      3 อ่อนนุช                 y=108
+#      4   Main ONN             y=132
+#      5 ตลาดเวิลด์มาร์เก็ต        y=156
+#      6   Main WRD             y=180
+#      7 กรุงเทพกรีฑา            y=204
+#      8   Main KTK             y=228
+#      9 เก้ากิโล                 y=252   <- ติ๊ก
+#     10   Main KKL             y=276
+#     11 อนิน สาขาสวนเสือศรีราชา  y=300   <- ติ๊ก
+#     12   Main SSS             y=324
+#
+# พฤติกรรมที่ทดสอบแล้ว
+#     - ตอนเปิดหน้านี้ไม่มีช่องไหนถูกติ๊กเลย จึงคลิกครั้งเดียว = ติ๊ก (ไม่ใช่ยกเลิก)
+#     - คลิกครั้งเดียวติ๊กทันที ไม่ต้องคลิกซ้ำเพื่อโฟกัสก่อน
+#     - ติ๊กกลุ่มแล้วโปรแกรมติ๊กคลังลูกทุกตัวในกลุ่มนั้นให้เอง
+#
+# การยืนยันว่าติ๊กติดจริง: เฝ้าดูเฉพาะกล่องของ "คลังลูก" (change_region) ไม่ดูกล่องที่คลิก
+# เพราะถ้าคลิกแค่ทำให้แถวได้โฟกัสแต่ไม่ติ๊ก กรอบโฟกัสอาจทำให้กล่องที่คลิกเปลี่ยนภาพ
+# กลายเป็นผลบวกลวง ส่วนกล่องลูกจะเปลี่ยนก็ต่อเมื่อโปรแกรมรับรู้การติ๊กกลุ่มจริงเท่านั้น
+# ติ๊กลูก 1 ช่องเปลี่ยนราว 165 pixel ต่ำกว่าค่าเริ่มต้น 200 จึงตั้ง change_min_pixels: 100
+
+name: r14_102_warehouse_select
+description: ติ๊กคลัง อนิน สาขาแยกชากค้อ / เก้ากิโล / อนิน สาขาสวนเสือศรีราชา แล้วกดตกลง
+on_error: abort
+
+steps:
+  - action: run_flow
+    name: เปิดหน้าเลือกคลัง
+    path: flows/r14_102_warehouse.yaml
+
+  - action: wait_window
+    name: จับหน้าต่างเงื่อนไขไว้อ้างอิง
+    as: cond
+    timeout: 60
+    window:
+      class_name: "FNWNS3125"
+      title: "เงื่อนไขการสร้างรายงาน"
+
+  - action: wait_window
+    name: จับหน้าต่างเลือกคลังไว้อ้างอิง
+    as: wh
+    timeout: 30
+    window:
+      class_name: "FNWNS3125"
+      title: "เลือกคลังสินค้าที่ต้องการ"
+
+  - action: dw_click
+    name: ติ๊กกลุ่ม อนิน สาขาแยกชากค้อ
+    window: wh
+    datawindow: { class_name: "pbdw125", control_id: 1003 }
+    at: { x: 7, y: 36 }
+    expect_change: true
+    change_region: { left: 30, right: 52, top: 50, bottom: 94 }     # Warehouse + Front Store
+    change_min_pixels: 100
+
+  - action: dw_click
+    name: ติ๊กกลุ่ม เก้ากิโล
+    window: wh
+    datawindow: { class_name: "pbdw125", control_id: 1003 }
+    at: { x: 7, y: 252 }
+    expect_change: true
+    change_region: { left: 30, right: 52, top: 266, bottom: 286 }   # Main KKL
+    change_min_pixels: 100
+
+  - action: dw_click
+    name: ติ๊กกลุ่ม อนิน สาขาสวนเสือศรีราชา
+    window: wh
+    datawindow: { class_name: "pbdw125", control_id: 1003 }
+    at: { x: 7, y: 300 }
+    expect_change: true
+    change_region: { left: 30, right: 52, top: 314, bottom: 334 }   # Main SSS
+    change_min_pixels: 100
+
+  - action: screenshot
+    name: 01_ticked
+    window: wh
+
+  # ยืนยันถึงผลจริง ไม่ใช่แค่ว่าหน้าเลือกคลังปิด (กด ออก ก็ปิดเหมือนกัน)
+  # ข้อความคลังในหน้าเงื่อนไขจะเปลี่ยนจาก "อนิน สาขาแยกชากค้อ:Warehouse"
+  # เป็น "อนิน สาขาแยกชากค้อ:Warehou..." (หลายคลังจนล้นช่อง) -- เปลี่ยนแค่ราว 85 pixel
+  # ที่ท้ายข้อความ ส่วนอื่นของฟอร์มไม่เปลี่ยนเลย จึงเฝ้าเฉพาะแถวข้อความคลัง
+  # และตั้ง change_min_pixels: 40 (พิกัดในระบบของ pbdw125 id=1000 ไม่รวมปุ่มดินสอ)
+  #
+  # ทดสอบแล้ว: ตอนหน้าเลือกคลังเปิดทับอยู่ ฟอร์มเงื่อนไขหน้าตาเหมือนตอนปกติทุก pixel
+  # ภาพตั้งต้นที่ถ่ายก่อนกดจึงเชื่อถือได้ ไม่มีผลบวกลวงจากหน้าต่างถูก disable
+  - action: click
+    name: กดปุ่มตกลง (หน้าเลือกคลัง)
+    window: wh
+    control: { class_name: "Button", title: "ตกลง" }
+    method: message
+    expect_change: true
+    change_window: cond
+    change_control: { class_name: "pbdw125", control_id: 1000 }
+    change_region: { left: 100, right: 334, top: 25, bottom: 52 }
+    change_min_pixels: 40
+
+  # abort_if ดักกล่องเตือน (เช่นไม่ได้เลือกคลัง) ให้รู้ผลทันทีแทนที่จะรอจนหมดเวลา
+  - action: wait_window_gone
+    name: รอหน้าเลือกคลังปิด
+    window: wh
+    timeout: 30
+    abort_if: { class_name: "#32770" }
+
+  - action: screenshot
+    name: 02_condition_after_select
+    window: cond

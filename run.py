@@ -5,7 +5,7 @@
     python run.py inspect --watch           # เฝ้าดู dump ใหม่ทุกครั้งที่หน้าจอเปลี่ยน
     python run.py run flows/login.yaml --dry-run
     python run.py run flows/login.yaml
-    python run.py run flows/r05_106_export.yaml --then-upload   # export แล้วอัปเข้า Supabase
+    python run.py run flows/r14_102_export.yaml                 # export CSV (สายที่ใช้จริง)
     python run.py actions                   # ดูรายการ action ที่ใช้ใน YAML ได้
     python run.py stop                      # ปิดโปรแกรมทิ้ง
 """
@@ -248,12 +248,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 # flow ที่รันเมื่อถูกดับเบิลคลิก - เปลี่ยนได้ใน settings.yaml (app.default_flow)
 # โดยไม่ต้อง build .exe ใหม่
-DEFAULT_FLOW = "flows/r05_106_export.yaml"
+DEFAULT_FLOW = "flows/r14_102_export.yaml"
 
 # ดับเบิลคลิกแล้วอัปโหลดเข้า Supabase ต่อด้วย (settings.yaml: app.default_then_upload)
-# เดิมดับเบิลคลิกได้แค่ export แล้วจบ ทำให้คนกดนึกว่าข้อมูลขึ้น Supabase แล้ว
-# แต่ badge หน้าเว็บไม่ขยับ - งานจริงของบอทตัวนี้คือ "export แล้วอัปโหลด" ไม่ใช่ export เฉย ๆ
-DEFAULT_THEN_UPLOAD = True
+# ปิดไว้จนกว่าจะมีตัวอัปโหลดของ R14.102 - upload-products.mjs ตัวปัจจุบันเขียนไว้สำหรับ
+# R05.106 (ตาราง products) และรับไฟล์ CSV ที่ flow เพิ่งสร้างซึ่งคนละหัวคอลัมน์กัน
+DEFAULT_THEN_UPLOAD = False
 
 
 def _double_clicked() -> bool:
