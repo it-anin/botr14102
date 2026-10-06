@@ -246,6 +246,11 @@ remote: `origin` = `it-anin/botr14102` (ที่ใช้จริง) · `botr
 `flows/`, `settings.yaml`, `.env` ถูกคัดลอกไปวาง**ข้าง** exe ไม่ได้ฝังเข้าไปข้างใน
 build ใหม่เฉพาะตอนแก้โค้ด Python
 
+**แก้ `flows/` ในโปรเจกต์แล้ว .exe ยังไม่เห็น** — ที่ exe อ่านคือสำเนาใน
+`dist\promaxx-bot\flows\` (gitignored) ต้องก๊อปไปทับเองทุกครั้ง
+`Copy-Item flows\*.yaml dist\promaxx-bot\flows\ -Force` แล้วเช็คด้วย
+`diff -rq flows dist/promaxx-bot/flows` (ไม่ขึ้นอะไร = ตรงกัน)
+
 ค่าที่มักปรับใน `settings.yaml`: `app.default_flow` (flow ที่รันเมื่อดับเบิลคลิก),
 `app.default_then_upload`, `upload.node_exe`, `app.close_timeout`
 
